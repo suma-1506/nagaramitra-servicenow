@@ -58,7 +58,7 @@ The core flow (submit, categorise, route, resolve, confirm) is built first, so a
 
 ## Repository contents
 
-- `/docs`: design documents (to be added)
+- `/docs`: design documents
 - Application source: synced from ServiceNow Studio (to be added)
 
 ## Data note
