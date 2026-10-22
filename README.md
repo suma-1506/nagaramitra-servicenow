@@ -5,6 +5,8 @@ A ServiceNow application for citizen grievance redressal in a city corporation. 
 > **Status:** In development (started 21 Oct 2026). Built solo on a ServiceNow Personal Developer Instance (Brazil release).
 > Originally conceived for the ServiceNow University HackNow hackathon; now being built independently as a portfolio project.
 
+**App source:** [nagaramitra-app](https://github.com/suma-1506/nagaramitra-app) holds the ServiceNow application files, committed from Studio.
+
 ## The problem
 
 City corporations receive complaints about water, roads, streetlights and sanitation through helplines, walk-ins, social media and apps. These channels aren't connected, which leads to:
@@ -59,7 +61,7 @@ The core flow (submit, categorise, route, resolve, confirm) is built first, so a
 ## Repository contents
 
 - `/docs`: design documents
-- Application source: synced from ServiceNow Studio (to be added)
+- Application source: in the companion repo [nagaramitra-app](https://github.com/suma-1506/nagaramitra-app), synced from ServiceNow Studio
 
 ## Data note
 
