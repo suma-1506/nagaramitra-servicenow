@@ -42,7 +42,7 @@ ServiceNow scoped application (Studio), Flow Designer, SLA definitions, Notifica
 
 The core flow (submit, categorise, route, resolve, confirm) is built first, so a working version always exists. AI features are then layered on top:
 
-- **Now Assist** (Smart Categorization, duplicate grouping, multilingual messages, executive brief) is planned if available. It isn't enabled on a free PDI, so the build uses:
+- **Now Assist** (Smart Categorization, duplicate grouping, multilingual messages, executive brief) is planned if available. It isn’t fully available on a free PDI, so the build uses:
   - rule-based categorisation,
   - rule-based duplicate matching (same category, same ward, nearby location, open status) with officer approval,
   - approved Telugu / Hindi / English message templates.
