@@ -2,7 +2,7 @@
 
 A ServiceNow application for citizen grievance redressal in a city corporation. A citizen reports a problem once, and the platform routes it to the right ward and department, groups duplicate reports into a single issue, enforces timelines with automatic escalation, and closes a complaint only when the citizen confirms the fix.
 
-> **Status:** In development (started 21 Oct 2026). Built solo on a ServiceNow Personal Developer Instance (Brazil release). The data model, sample data and automatic routing work today; intake form, SLAs, duplicate grouping and dashboards are still to come.
+> **Status:** In development (started 21 Oct 2026). Built solo on a ServiceNow Personal Developer Instance (Brazil release). **Week 1 is complete (2 Nov 2026):** the data model, sample data, automatic routing and role-based access control work and have been tested. The citizen intake form, SLAs, duplicate grouping and dashboards are still to come.
 > Originally conceived for the ServiceNow University HackNow hackathon; now being built independently as a portfolio project.
 
 **App source:** [nagaramitra-app](https://github.com/suma-1506/nagaramitra-app) holds the ServiceNow application files, committed from Studio. This repository is the project overview and documentation.
@@ -28,16 +28,25 @@ City corporations receive complaints about water, roads, streetlights and sanita
 
 ## What works today
 
-- **Data model:** eight tables (Grievance, Issue, Ward, Zone, Department, Category, Civic Asset, Officer) with sample data for 2 zones, 4 wards, 3 departments, 6 categories and 8 civic assets.
+- **Data model:** eight tables (Grievance, Issue, Ward, Zone, Department, Category, Civic Asset, Officer) with sample data for 2 zones, 4 wards, 3 departments, 6 categories, 8 civic assets and 5 grievances.
 - **Automatic routing:** when a grievance is created, a Business Rule calls a Script Include (`GrievanceRouter`) that:
   - finds the ward from the linked civic asset, or otherwise from the nearest ward by coordinates (within 25 km; farther complaints are left for an officer),
   - picks the category by matching keywords in the complaint text,
   - takes the department from the category,
   - assigns the group for that ward and department (for example, "Ward 1 - Roads").
 - **Audit trail:** every routing decision writes a work note, either "Auto-routed" or a reason why manual assignment is needed.
-- **Access control:** citizens can read only their own grievances (tested by impersonating a citizen user). Ward officer, zonal officer and Commissioner rules are in progress.
+- **Access control (tested by impersonating each role):**
+  - Citizens can create grievances and read only their own. The Citizen field defaults to the logged-in user.
+  - Ward officers can read and edit only the grievances of their own ward (looked up through their Officer record).
+  - Zonal officers and the Commissioner can read all grievances.
+  - The access controls that Studio generates automatically for the Grievance table are deactivated in favour of these role-specific rules.
 
 Routing is implemented with a Business Rule and Script Include because the Run Script action isn't available in Workflow Studio on this instance. Flow Designer is planned for escalations and notifications.
+
+## Known limitations (next up)
+
+- The inherited Task fields (such as Short description and State) are read-only on the native form for citizens and officers. Field-level access controls are planned for Week 2, and the citizen will submit through the portal form rather than the native form.
+- Access controls on the other tables (Ward, Zone, Department and so on) still use the auto-generated per-table roles. They will be replaced with the five application roles in Week 2.
 
 ## Data model
 
@@ -69,15 +78,16 @@ The core flow (submit, categorise, route, resolve, confirm) is built first, so a
 
 | Week | Focus | Status |
 |---|---|---|
-| 1 | Foundation: tables, roles and ACLs, sample data, first routing | Mostly done (tables, sample data and routing complete; ACLs in progress) |
-| 2 | Intake form, Virtual Agent intake, geo-routing | Routing logic done early; intake form not started |
+| 1 | Foundation: tables, roles and ACLs, sample data, first routing | **Done** (tables, sample data, routing and access controls complete and tested) |
+| 2 | Intake form, field-level ACLs, Virtual Agent intake, geo-routing | Routing logic done early; intake form, field-level ACLs and Virtual Agent intake next |
 | 3 | SLAs, escalation, duplicate grouping, citizen confirmation | Not started |
 | 4 | Portal polish, dashboards, documentation, demo video | Not started |
 
 ## Repository contents
 
 - `/docs`: design documents
-- Application source: in the companion repo [nagaramitra-app](https://github.com/suma-1506/nagaramitra-app), synced from ServiceNow Studio. Table data is not included in that repo; a seed script will be added so the sample data can be reloaded.
+- `/seed`: two background scripts that rebuild the sample data on a fresh or reset instance. Run `seed_1_users_groups_GLOBAL.js` in the global scope first, then `seed_2_data_NAGARAMITRA_SCOPE.js` in the NagaraMitra scope. They skip records that already exist, but are meant for rebuilding, not for an instance that already has this data.
+- Application source: in the companion repo [nagaramitra-app](https://github.com/suma-1506/nagaramitra-app), synced from ServiceNow Studio. Table data is not included in that repo, which is why the seed scripts exist.
 
 ## Data note
 
