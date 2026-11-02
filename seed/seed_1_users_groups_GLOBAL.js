@@ -8,26 +8,30 @@
  *   4. Paste this whole file and click Run script.
  *   Safe to re-run: existing records are skipped, never duplicated.
  *
- * Everything marked EDIT is sample data reconstructed from the README counts.
- * Compare it with your real instance and correct it. All names are made up.
- * No passwords are set. Impersonation does not need one; set one on the user
- * form only if you want to log in as that user.
+ * Use this ONLY to rebuild after an instance reset or on a fresh instance.
+ * Do NOT run it on an instance that already has this data.
+ *
+ * Checked against the real instance on 2 Nov 2026 (users, names, groups).
+ * No passwords are set. Impersonation does not need one. All names are made up.
  */
 (function () {
   var APP = 'x_2273825_nagara_0';
 
-  // EDIT: must match the department names in script 2 (the router builds
-  // group names as "<Ward label> - <Department name>", e.g. "Ward 1 - Roads").
-  var DEPARTMENTS = ['Roads', 'Water Supply', 'Sanitation'];
-  // EDIT: the part of each ward name before " - " (must match script 2).
+  // Department names. The router builds group names as "<Ward label> - <Department name>",
+  // e.g. "Ward 1 - Roads". Must match DEPARTMENTS in seed 2.
+  var DEPARTMENTS = ['Water', 'Roads', 'Sanitation'];
+  // The part of each ward name before " - " (must match WARDS in seed 2).
   var WARD_LABELS = ['Ward 1', 'Ward 2', 'Ward 3', 'Ward 4'];
 
-  // EDIT: confirm the real user names (user_name) on your instance.
+  // The 3 department-level groups (confirmed on the instance).
+  var DEPT_GROUPS = ['Water Dept', 'Roads Dept', 'Sanitation Dept'];
+
+  // Confirmed real users (no email is set on the real users).
   var USERS = [
-    { user_name: 'citizen.asha',   first_name: 'Asha',  last_name: 'Citizen',      role: 'citizen' },
-    { user_name: 'officer.ward1',  first_name: 'Ward1', last_name: 'Officer',      role: 'ward_officer',  ward_label: 'Ward 1' },
-    { user_name: 'officer.zonal1', first_name: 'Zonal', last_name: 'Officer One',  role: 'zonal_officer' },
-    { user_name: 'commissioner1',  first_name: 'City',  last_name: 'Commissioner', role: 'commissioner' }
+    { user_name: 'citizen.asha',   first_name: 'Asha',          last_name: 'Citizen',  role: 'citizen' },
+    { user_name: 'officer.ward1',  first_name: 'Ward1',         last_name: 'Officer',  role: 'ward_officer',  ward_label: 'Ward 1' },
+    { user_name: 'officer.zonal1', first_name: 'Zonal1',        last_name: 'Officer',  role: 'zonal_officer' },
+    { user_name: 'commissioner1',  first_name: 'Commissioner',  last_name: 'One',      role: 'commissioner' }
   ];
 
   function say(m) { gs.print('[seed1] ' + m); }
@@ -48,7 +52,6 @@
     gr.setValue('user_name', u.user_name);
     gr.setValue('first_name', u.first_name);
     gr.setValue('last_name', u.last_name);
-    gr.setValue('email', u.user_name.replace(/[^a-z0-9]/g, '') + '@example.com');
     gr.setValue('active', true);
     var id = gr.insert();
     say(id ? 'user created: ' + u.user_name : 'FAILED to create user: ' + u.user_name);
@@ -96,13 +99,16 @@
     m.insert();
   }
 
-  // 1) one group per ward x department
+  // 1) one group per ward x department (12), plus the 3 department groups
   var groupIds = {};
   for (var w = 0; w < WARD_LABELS.length; w++) {
     for (var d = 0; d < DEPARTMENTS.length; d++) {
       var gName = WARD_LABELS[w] + ' - ' + DEPARTMENTS[d];
       groupIds[gName] = ensureGroup(gName);
     }
+  }
+  for (var dg = 0; dg < DEPT_GROUPS.length; dg++) {
+    ensureGroup(DEPT_GROUPS[dg]);
   }
 
   // 2) users, roles, and group membership for ward officers
