@@ -8,75 +8,81 @@
  *   3. Paste this whole file and click Run script.
  *   Safe to re-run: existing records are skipped, never duplicated.
  *
- * Everything marked EDIT is sample data reconstructed from the README counts
- * (2 zones, 4 wards, 3 departments, 6 categories, 8 civic assets, 5 grievances).
- * Compare it with your real instance and correct it. All data is made up.
+ * Use this ONLY to rebuild after an instance reset or on a fresh instance.
+ * Do NOT run it on an instance that already has this data.
+ *
+ * All data below was copied from the real instance on 2 Nov 2026 using a
+ * read-only background script. All names and locations are made up.
+ *
+ * Departments have an assignment_group (Water Dept, Roads Dept, Sanitation Dept).
+ * Those groups are created by seed 1, and reading sys_user_group from this
+ * scope relies on the cross-scope privilege that ships with the app.
  *
  * Grievances are inserted normally, so the GrievanceRouter business rule runs
- * on each one. That doubles as a routing test: check the work notes afterwards.
- * Grievance numbers (GRV...) come from the instance counter, so they will not
- * be the same as on your original instance.
+ * on each one and fills ward, category, department and assignment group.
+ * That doubles as a routing test: check the work notes afterwards. Grievance
+ * numbers (GRV...) come from the instance counter, so they will not match
+ * the original numbers.
  */
 (function () {
   var P = 'x_2273825_nagara_0_';
 
-  // ---------- EDIT: data ----------
+  // ---------- data ----------
   var ZONES = [
-    { code: 'Z1', name: 'Zone 1' },
-    { code: 'Z2', name: 'Zone 2' }
+    { code: 'Z01', name: 'Central Zone' },
+    { code: 'Z02', name: 'North Zone' }
   ];
 
-  // The part before " - " must match WARD_LABELS in seed 1 (the router relies on it).
+  // The part of each name before " - " must match WARD_LABELS in seed 1.
   var WARDS = [
-    { ward_number: 1, name: 'Ward 1 - MVP Colony',     zone: 'Z1', latitude: '17.7416', longitude: '83.3361' },
-    { ward_number: 2, name: 'Ward 2 - Seethammadhara', zone: 'Z1', latitude: '17.7435', longitude: '83.3070' },
-    { ward_number: 3, name: 'Ward 3 - Madhurawada',    zone: 'Z2', latitude: '17.8054', longitude: '83.3772' },
-    { ward_number: 4, name: 'Ward 4 - Gajuwaka',       zone: 'Z2', latitude: '17.6868', longitude: '83.2185' }
+    { ward_number: 1, name: 'Ward 1 - MVP Colony',    zone: 'Z01', latitude: '17.686816', longitude: '83.218482' },
+    { ward_number: 2, name: 'Ward 2 - Dwaraka Nagar', zone: 'Z01', latitude: '17.729500', longitude: '83.306800' },
+    { ward_number: 3, name: 'Ward 3 - Madhavadhara',  zone: 'Z02', latitude: '17.745000', longitude: '83.322000' },
+    { ward_number: 4, name: 'Ward 4 - Madhurawada',   zone: 'Z02', latitude: '17.806000', longitude: '83.376000' }
   ];
 
-  // Names must match DEPARTMENTS in seed 1.
+  // group = the department-level group created in seed 1.
   var DEPARTMENTS = [
-    { code: 'ROADS', name: 'Roads' },
-    { code: 'WATER', name: 'Water Supply' },
-    { code: 'SANI',  name: 'Sanitation' }
+    { code: 'WAT', name: 'Water',      group: 'Water Dept' },
+    { code: 'ROD', name: 'Roads',      group: 'Roads Dept' },
+    { code: 'SAN', name: 'Sanitation', group: 'Sanitation Dept' }
   ];
 
   var CATEGORIES = [
-    { name: 'Pothole',               dept: 'Roads',        sla_hours: 72, keywords: 'pothole,road damage,crack,road' },
-    { name: 'Streetlight Not Working', dept: 'Roads',      sla_hours: 48, keywords: 'streetlight,street light,lamp,dark street' },
-    { name: 'Water Leakage',         dept: 'Water Supply', sla_hours: 24, keywords: 'water leak,leakage,pipe burst,burst pipe' },
-    { name: 'No Water Supply',       dept: 'Water Supply', sla_hours: 48, keywords: 'no water,tap dry,supply cut,water supply' },
-    { name: 'Drain Blockage',        dept: 'Sanitation',   sla_hours: 24, keywords: 'drain,sewage,overflow,blocked' },
-    { name: 'Garbage Not Collected', dept: 'Sanitation',   sla_hours: 48, keywords: 'garbage,waste,dustbin,trash' }
+    { name: 'Water Supply Disruption', dept: 'Water',      sla_hours: 24, keywords: 'no water, water supply, low pressure, dry tap, tap, tanker, borewell' },
+    { name: 'Pipe Leakage',            dept: 'Water',      sla_hours: 12, keywords: 'leak, leaking, burst, pipeline, water wastage, overflowing tank' },
+    { name: 'Pothole / Road Damage',   dept: 'Roads',      sla_hours: 72, keywords: 'pothole, road damage, broken road, crater, road repair, cracked road' },
+    { name: 'Streetlight Not Working', dept: 'Roads',      sla_hours: 48, keywords: 'streetlight, street light, lamp, light not working, dark street, pole light' },
+    { name: 'Garbage Not Collected',   dept: 'Sanitation', sla_hours: 24, keywords: 'garbage, trash, waste, dustbin, bin, not collected, litter' },
+    { name: 'Drain Blockage',          dept: 'Sanitation', sla_hours: 24, keywords: 'drain, drainage, sewer, sewage, clogged, blocked, manhole' }
   ];
 
-  // EDIT: 'type' must be a real choice value of the Civic Asset Type field.
+  // type values: pipe, drain, road_segment, pole
   var ASSETS = [
-    { asset_id: 'AST-001', type: 'drain',       ward: 'Ward 1 - MVP Colony',     latitude: '17.7420', longitude: '83.3355' },
-    { asset_id: 'AST-002', type: 'streetlight', ward: 'Ward 1 - MVP Colony',     latitude: '17.7410', longitude: '83.3368' },
-    { asset_id: 'AST-003', type: 'pipe',        ward: 'Ward 2 - Seethammadhara', latitude: '17.7440', longitude: '83.3075' },
-    { asset_id: 'AST-004', type: 'road',        ward: 'Ward 2 - Seethammadhara', latitude: '17.7430', longitude: '83.3065' },
-    { asset_id: 'AST-005', type: 'drain',       ward: 'Ward 3 - Madhurawada',    latitude: '17.8060', longitude: '83.3780' },
-    { asset_id: 'AST-006', type: 'streetlight', ward: 'Ward 3 - Madhurawada',    latitude: '17.8050', longitude: '83.3765' },
-    { asset_id: 'AST-007', type: 'pipe',        ward: 'Ward 4 - Gajuwaka',       latitude: '17.6875', longitude: '83.2190' },
-    { asset_id: 'AST-008', type: 'road',        ward: 'Ward 4 - Gajuwaka',       latitude: '17.6860', longitude: '83.2180' }
+    { asset_id: 'DRN-W1-001', type: 'drain',        ward: 'Ward 1 - MVP Colony',    latitude: '17.686900', longitude: '83.218600' },
+    { asset_id: 'POL-W1-001', type: 'pole',         ward: 'Ward 1 - MVP Colony',    latitude: '17.686500', longitude: '83.218100' },
+    { asset_id: 'PIP-W2-001', type: 'pipe',         ward: 'Ward 2 - Dwaraka Nagar', latitude: '17.729600', longitude: '83.306900' },
+    { asset_id: 'RDS-W2-001', type: 'road_segment', ward: 'Ward 2 - Dwaraka Nagar', latitude: '17.729200', longitude: '83.306500' },
+    { asset_id: 'POL-W3-001', type: 'pole',         ward: 'Ward 3 - Madhavadhara',  latitude: '17.744800', longitude: '83.321800' },
+    { asset_id: 'DRN-W3-001', type: 'drain',        ward: 'Ward 3 - Madhavadhara',  latitude: '17.745100', longitude: '83.322100' },
+    { asset_id: 'PIP-W4-001', type: 'pipe',         ward: 'Ward 4 - Madhurawada',   latitude: '17.806100', longitude: '83.376100' },
+    { asset_id: 'RDS-W4-001', type: 'road_segment', ward: 'Ward 4 - Madhurawada',   latitude: '17.805800', longitude: '83.375800' }
   ];
 
-  // EDIT: 'level' must be a real choice value of the Officer Level field.
+  // level values: ward, zonal, commissioner
   var OFFICERS = [
-    { user_name: 'officer.ward1',  level: 'ward',         ward: 'Ward 1 - MVP Colony', department: 'Roads' },
-    { user_name: 'officer.zonal1', level: 'zonal',        zone: 'Z1' },
+    { user_name: 'officer.ward1',  level: 'ward',         ward: 'Ward 1 - MVP Colony', zone: 'Z01', department: 'Water' },
+    { user_name: 'officer.zonal1', level: 'zonal',        zone: 'Z01' },
     { user_name: 'commissioner1',  level: 'commissioner' }
   ];
 
-  // EDIT: 'language' must be a real choice value of the Language field.
-  // The router fills ward/category/department from the asset and the text.
+  // language values: english, telugu, hindi. asset '' = no civic asset linked.
   var GRIEVANCES = [
-    { short_description: 'Blocked drain overflowing near MVP Colony', description: 'The drain is blocked and sewage is overflowing onto the street.', asset: 'AST-001', language: 'english', latitude: '17.7420', longitude: '83.3355' },
-    { short_description: 'Streetlight not working on our lane',        description: 'The streetlight has been off for a week and the street is dark.', asset: 'AST-002', language: 'telugu',  latitude: '17.7410', longitude: '83.3368' },
-    { short_description: 'Water leakage from main pipe',               description: 'There is a water leak from the pipe near the junction.',          asset: 'AST-003', language: 'english', latitude: '17.7440', longitude: '83.3075' },
-    { short_description: 'Pothole on main road',                       description: 'A large pothole on the road is causing accidents.',               asset: 'AST-008', language: 'hindi',   latitude: '17.6860', longitude: '83.2180' },
-    { short_description: 'Garbage not collected for three days',       description: 'Garbage and waste are piling up near the dustbin.',               asset: 'AST-005', language: 'english', latitude: '17.8060', longitude: '83.3780' }
+    { short_description: 'Streetlight not working',          description: 'The street light in our lane is dark since last night',                 asset: '',           language: 'english', latitude: '17.686700', longitude: '83.218300' },
+    { short_description: 'Pothole near main road',           description: 'Big pothole on the road, vehicles are getting damaged',                 asset: 'RDS-W2-001', language: 'english', latitude: '17.729200', longitude: '83.306500' },
+    { short_description: 'No water supply since morning',    description: 'No water in the tap since morning, low pressure yesterday',             asset: '',           language: 'english', latitude: '17.686500', longitude: '83.218100' },
+    { short_description: 'Drain is blocked and overflowing', description: 'The drain is clogged and sewage is overflowing onto the street',        asset: 'DRN-W3-001', language: 'telugu',  latitude: '17.745100', longitude: '83.322100' },
+    { short_description: 'Garbage not collected for 3 days', description: 'Garbage is piled up near the dustbin and nobody has collected it',      asset: '',           language: 'hindi',   latitude: '17.806100', longitude: '83.376100' }
   ];
   var GRIEVANCE_CITIZEN = 'citizen.asha';
   // ---------- end of data ----------
@@ -98,7 +104,7 @@
     gr.initialize();
     gr.setValue(keyField, keyValue);
     for (var f in fields) {
-      if (fields.hasOwnProperty(f) && fields[f] !== '' && fields[f] !== null) {
+      if (fields.hasOwnProperty(f) && fields[f] !== '' && fields[f] !== null && fields[f] !== undefined) {
         gr.setValue(f, fields[f]);
       }
     }
@@ -120,7 +126,10 @@
     });
   }
   for (i = 0; i < DEPARTMENTS.length; i++) {
-    deptId[DEPARTMENTS[i].name] = upsert(P + 'department', 'name', DEPARTMENTS[i].name, { code: DEPARTMENTS[i].code });
+    var d = DEPARTMENTS[i];
+    var grpId = lookup('sys_user_group', 'name', d.group);
+    if (!grpId) { say('GROUP NOT FOUND: ' + d.group + ' (run seed 1 first)'); }
+    deptId[d.name] = upsert(P + 'department', 'name', d.name, { code: d.code, assignment_group: grpId });
   }
   for (i = 0; i < CATEGORIES.length; i++) {
     var c = CATEGORIES[i];
@@ -151,7 +160,7 @@
     upsert(P + 'grievance', 'short_description', g.short_description, {
       description: g.description,
       citizen: citizenId,
-      civic_asset: assetId[g.asset],
+      civic_asset: g.asset ? assetId[g.asset] : '',
       language: g.language,
       latitude: g.latitude,
       longitude: g.longitude
