@@ -2,7 +2,7 @@
 
 A ServiceNow application for citizen grievance redressal in a city corporation. A citizen reports a problem once, and the platform routes it to the right ward and department, groups duplicate reports into a single issue, enforces timelines with automatic escalation, and closes a complaint only when the citizen confirms the fix.
 
-> **Status:** In development (started 21 Oct 2026). Built solo on a ServiceNow Personal Developer Instance (Brazil release). **Week 1 is complete (2 Nov 2026):** the data model, sample data, automatic routing and role-based access control work and have been tested. The citizen intake form, SLAs, duplicate grouping and dashboards are still to come.
+> **Status:** In development (started 21 Oct 2026). Built solo on a ServiceNow Personal Developer Instance (Brazil release). **Week 1 is complete and Week 2 is well under way (updated 4 Nov 2026):** the data model, sample data, automatic routing, role-based access control and the citizen portal form (with photo upload and GPS location) work and have been tested. Virtual Agent intake, SLAs and escalation, citizen-confirmed closure, duplicate grouping and dashboards are still to come.
 > Originally conceived for the ServiceNow University HackNow hackathon; now being built independently as a portfolio project.
 
 **App source:** [nagaramitra-app](https://github.com/suma-1506/nagaramitra-app) holds the ServiceNow application files, committed from Studio. This repository is the project overview and documentation.
@@ -29,15 +29,21 @@ City corporations receive complaints about water, roads, streetlights and sanita
 ## What works today
 
 - **Data model:** eight tables (Grievance, Issue, Ward, Zone, Department, Category, Civic Asset, Officer) with sample data for 2 zones, 4 wards, 3 departments, 6 categories, 8 civic assets and 5 grievances.
+- **Citizen portal form** (Service Portal page `nagaramitra_submit_grievance`):
+  - short description, description and language (English, Telugu or Hindi),
+  - location as latitude and longitude, with a "Use my current location" button that reports the accuracy,
+  - one optional photo, resized in the browser and saved as an attachment on the grievance,
+  - validation on both the client and the server (bad coordinates and wrong file types are rejected),
+  - the Citizen field is set to the logged-in user.
 - **Automatic routing:** when a grievance is created, a Business Rule calls a Script Include (`GrievanceRouter`) that:
-  - finds the ward from the linked civic asset, or otherwise from the nearest ward by coordinates (within 25 km; farther complaints are left for an officer),
+  - finds the ward from the linked civic asset, or otherwise from the nearest ward centre by coordinates (within 25 km; farther complaints are left for an officer),
   - picks the category by matching keywords in the complaint text,
   - takes the department from the category,
   - assigns the group for that ward and department (for example, "Ward 1 - Roads").
-- **Audit trail:** every routing decision writes a work note, either "Auto-routed" or a reason why manual assignment is needed.
+- **Audit trail:** every routing decision writes a work note, either "Auto-routed" or a reason why manual assignment is needed (including when no assignment group exists for the ward and department).
 - **Access control (tested by impersonating each role):**
-  - Citizens can create grievances and read only their own. The Citizen field defaults to the logged-in user.
-  - Ward officers can read and edit only the grievances of their own ward (looked up through their Officer record).
+  - Citizens can create grievances and read only their own. Fields that officers own (assignment group, assigned to, priority, state, parent, active and citizen) are read-only for citizens on create.
+  - Ward officers can read and edit only the grievances of their own ward (looked up through their Officer record), and can update State and Assigned to. They can open the photo on their own ward's grievances.
   - Zonal officers and the Commissioner can read all grievances.
   - The access controls that Studio generates automatically for the Grievance table are deactivated in favour of these role-specific rules.
 
@@ -45,8 +51,11 @@ Routing is implemented with a Business Rule and Script Include because the Run S
 
 ## Known limitations (next up)
 
-- The inherited Task fields (such as Short description and State) are read-only on the native form for citizens and officers. Field-level access controls are planned for Week 2, and the citizen will submit through the portal form rather than the native form.
-- Access controls on the other tables (Ward, Zone, Department and so on) still use the auto-generated per-table roles. They will be replaced with the five application roles in Week 2.
+- **Ward matching uses the nearest ward centre, not ward boundaries.** A complaint near the edge of two wards can be routed to the neighbouring ward. Real ward boundary polygons would be needed for exact matching in a pilot.
+- The portal form accepts one photo per complaint.
+- Virtual Agent intake is not built yet.
+- The Assigned to lookup for officers is not yet narrowed to officers only.
+- Access controls on the other tables (Ward, Zone, Department and so on) still use the auto-generated per-table roles. They will be replaced with the five application roles.
 
 ## Data model
 
@@ -79,7 +88,7 @@ The core flow (submit, categorise, route, resolve, confirm) is built first, so a
 | Week | Focus | Status |
 |---|---|---|
 | 1 | Foundation: tables, roles and ACLs, sample data, first routing | **Done** (tables, sample data, routing and access controls complete and tested) |
-| 2 | Intake form, field-level ACLs, Virtual Agent intake, geo-routing | Routing logic done early; intake form, field-level ACLs and Virtual Agent intake next |
+| 2 | Intake form, field-level ACLs, Virtual Agent intake, geo-routing | Routing, field-level ACLs and the portal form with photo and GPS are done; Virtual Agent intake next |
 | 3 | SLAs, escalation, duplicate grouping, citizen confirmation | Not started |
 | 4 | Portal polish, dashboards, documentation, demo video | Not started |
 
@@ -91,7 +100,7 @@ The core flow (submit, categorise, route, resolve, confirm) is built first, so a
 
 ## Data note
 
-All data in this project is made-up sample data. No real citizen information is used.
+All people, officers and complaints in this project are made-up sample data, and no real citizen information is used. Ward centres and civic asset positions use real Visakhapatnam locations (read from Google Maps) so that routing can be tested realistically; the assets themselves are invented.
 
 ## Author
 
